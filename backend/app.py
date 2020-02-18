@@ -25,8 +25,8 @@ homeConnect = oauth.create_client('minion-production')
 
 @app.route('/')
 def hello_world():
-    for i in range(13, -13, -1):
-        i = abs(i)
+    for i in range(-13, 13):
+        i = 12-abs(i)
         changeLight(hex(i*21).lstrip("0x"))
     return 'Hello, World!'
 
