@@ -1,8 +1,12 @@
 import json
+import logging
+from datetime import datetime, timedelta
 
 import requests
 from authlib.integrations.flask_client import OAuth
-from flask import Flask, redirect
+from flask import Flask, redirect, request
+
+from scheduler import schedule_task
 
 # use loginpass to make OAuth connection simpler
 
@@ -57,6 +61,40 @@ def authorize():
     return redirect("/")
 
 
+@app.route("/schedule", methods=["POST"])
+def schedule():
+    """
+    Schedule a given task.
+
+    Request object
+    {
+        "earliest_start_time": datetime,
+        "deadline": datetime,
+        "prod_time_in_min": timedelta
+    }
+    """
+    args: dict = request.json
+    try:
+        earliest_start_time = datetime.strptime(
+            args["earliest_start_time"],
+            "%Y-%m-%d %H:%M:%S"
+        )
+        deadline = datetime.strptime(
+            args["deadline"],
+            "%Y-%m-%d %H:%M:%S"
+        )
+        prod_time_in_min = timedelta(minutes=int(args["prod_time_in_min"]))
+    except:
+        return "Wrong arguments! Did you supply {earliest_start_time: string, deadline: string, prod_time_in_min: int } ?"
+
+    res = schedule_task(
+        earliest_start_time=earliest_start_time,
+        deadline=deadline,
+        prod_time=prod_time_in_min
+    )
+    return str(res)
+
+
 def makeCoffee():
     makeCoffee = homeConnect.put(
         "https://api.home-connect.com/api/homeappliances/SIEMENS-TI9575X1DE-68A40E357F21/programs/active",
@@ -98,4 +136,12 @@ def changeLight(hexvalue):
     requests.post(
         "http://192.168.1.1/TMG.htm",
         data=f"UDP_Packet=24.00.02.0B.0.{hexvalue}.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20"
+    )
+
+
+if __name__ == "__main__":
+    logging.basicConfig(
+        format="%(asctime)s.%(msecs)03d - %(module)s - %(levelname)s - %(message)s",
+        datefmt="%H:%M:%S",
+        level=logging.INFO,
     )
