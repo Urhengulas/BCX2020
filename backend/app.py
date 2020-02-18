@@ -1,6 +1,7 @@
 import json
 
 import requests
+import time
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, redirect
 
@@ -27,16 +28,32 @@ homeConnect = oauth.create_client("minion-production")
 
 @app.route("/")
 def hello_world():
+    
     for i in range(-13, 13):
         i = 12-abs(i)
+<<<<<<< HEAD
         changeLight(hex(i*21).lstrip("0x"))
     return "Hello, World!"
 
+=======
+        time.sleep(0.025)
+        changeStrangeLight("0",hex(i*21).lstrip("0x"))
+        changeLight("2",hex(i*21).lstrip("0x"))
+    # initIOPort("0")
+    # initIOPort("2")
+    # changeStrangeLight("0","FF")
+    # changeLight("2","7F")
+    return 'Hello, World!'
+>>>>>>> master
 
 @app.route("/login")
 def login():
+<<<<<<< HEAD
     print("Hello, World!")
     redirect_uri = "http://localhost:5000/authorize"
+=======
+    redirect_uri ="http://localhost:5000/authorize"
+>>>>>>> master
     return homeConnect.authorize_redirect(redirect_uri)
 
 
@@ -86,16 +103,30 @@ def selectedProgram():
     print(selectedProgram.content)
     return
 
+<<<<<<< HEAD
 
 def initIOPort():
     requests.post(
         "http://192.168.1.1/TMG.htm",
         data="UDP_Packet=24.00.02.0F.0.00.0C.11.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20"
     )
+=======
+def initIOPort(port):
+    r = requests.post('http://192.168.1.1/TMG.htm', data ="UDP_Packet=24.00.02.0F." + port + ".00.0C.11.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
 
+>>>>>>> master
 
+def changeLight(port, hexvalue):
+    r = requests.post('http://192.168.1.1/TMG.htm', data ="UDP_Packet=24.00.02.0B." + port + "." + hexvalue + ".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
+
+<<<<<<< HEAD
 def changeLight(hexvalue):
     requests.post(
         "http://192.168.1.1/TMG.htm",
         data=f"UDP_Packet=24.00.02.0B.0.{hexvalue}.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20"
     )
+=======
+def changeStrangeLight(port, hexvalue):
+    r = requests.post('http://192.168.1.1/TMG.htm', data ="UDP_Packet=24.00.02.0B." + port + ".67.04.00.02.00.00."+hexvalue+".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
+
+>>>>>>> master
