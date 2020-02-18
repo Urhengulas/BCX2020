@@ -1,7 +1,8 @@
 import json
-
+from datetime import datetime, timedelta
 import requests
 import time
+import pandas as pd 
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, redirect
 
@@ -10,6 +11,13 @@ from flask import Flask, redirect
 app = Flask(__name__)
 app.secret_key = "!secret"
 oauth = OAuth(app)
+
+data: pd.Series = pd.read_csv(
+    "../data/renewData.csv",
+    sep=";",
+    parse_dates=["datelabel"],
+    index_col="datelabel"
+)
 
 oauth.register(
     name="minion-production",
@@ -29,15 +37,16 @@ homeConnect = oauth.create_client("minion-production")
 @app.route("/")
 def hello_world():
     
-    for i in range(-13, 13):
-        i = 12-abs(i)
-        time.sleep(0.025)
-        changeStrangeLight("0",hex(i*21).lstrip("0x"))
-        changeLight("2",hex(i*21).lstrip("0x"))
+    # for i in range(-13, 13):
+    #     i = 12-abs(i)
+    #     time.sleep(0.025)
+    #     changeStrangeLight("0",hex(i*21).lstrip("0x"))
+    #     changeLight("2",hex(i*21).lstrip("0x"))
     # initIOPort("0")
     # initIOPort("2")
     # changeStrangeLight("0","FF")
     # changeLight("2","7F")
+    runEnergyData(data,"2019-01-01 02:00:00")
     return 'Hello, World!'
 
 @app.route("/login")
@@ -101,4 +110,18 @@ def changeLight(port, hexvalue):
 
 def changeStrangeLight(port, hexvalue):
     r = requests.post('http://192.168.1.1/TMG.htm', data ="UDP_Packet=24.00.02.0B." + port + ".67.04.00.02.00.00."+hexvalue+".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
+
+def runEnergyData(data, start_date):
+    print(data["2019-01-01 02:00:00"])
+
+    start_date = datetime.strptime("2019-01-01 00:00:00","%Y-%m-%d %H:%M:%S" )
+    end_date = start_date + timedelta(days=1)
+    delta = timedelta(hours=1)
+    while start_date <= end_date:
+        print(data[start_date.strftime("%Y-%m-%d %H:%M:%S")].values[0][0])
+        print(int(data[start_date.strftime("%Y-%m-%d %H:%M:%S")].values[0][0]*0.12))
+        changeStrangeLight("0",hex(int(data[start_date.strftime("%Y-%m-%d %H:%M:%S")].values[0][0]*0.12)).lstrip("0x"))
+        time.sleep(0.5)
+        start_date += delta
+
 
