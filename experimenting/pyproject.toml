@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "experimenting"
+version = "0.1.0"
+description = ""
+authors = ["Urhengulas <johann.hemmann@code.berlin>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+jupyterlab = "^1.2.6"
+pandas = "^1.0.1"
+numpy = "^1.18.1"
+plotly = "^4.5.0"
+notebook = ">=5.3"
+ipywidgets = "7.5"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
