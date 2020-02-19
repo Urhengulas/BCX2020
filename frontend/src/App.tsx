@@ -5,41 +5,32 @@ import { message, Form, Button, Row } from "antd";
 import { Formik } from "formik";
 import { FormItem, DatePicker, Select } from "formik-antd";
 import { Typography } from "antd";
+import axios from "axios";
+
 
 const { Title, Text } = Typography;
-
-// interface DataPoint {
-//   datelabel: Date | number | string;
-//   value: number | string;
-// }
-
-// type DataPoints = DataPoint[];
 
 const App = () => {
   const [result, setResult] = useState(new Date());
 
-  const makeRequest = (
-    startTime: Date,
-    endTime: Date,
-    productionTime: number
-  ) => {
-    const resquestObj = {
-      earliest_start_time: startTime,
-      deadline: endTime,
+  const makeRequest = async (startTime: Date, endTime: Date, productionTime: number) => {
+    const startTimeStr = `${startTime.getFullYear()}-${startTime.getMonth() + 1}-${startTime.getDate()} ${startTime.getHours()}:${startTime.getMinutes()}:${startTime.getSeconds()}`;
+    const endTimeStr = `${endTime.getFullYear()}-${endTime.getMonth() + 1}-${endTime.getDate()} ${endTime.getHours()}:${endTime.getMinutes()}:${endTime.getSeconds()}`;
+    const inputData = {
+      earliest_start_time: startTimeStr,
+      deadline: endTimeStr,
       prod_time_in_min: productionTime
     };
-    console.log(resquestObj);
-    const data = fetch("localhost:5000/schedule", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(resquestObj)
-    })
-      .then(response => response.json())
-      .then(response => setResult(response))
-      .catch(err => console.error(err));
+    console.log("inputData=", inputData);
+    const res = await axios.post(
+      "http://localhost:5000/schedule",
+      inputData
+    );
+    const a = res.data.start_time;
+    console.log("result=", a);
+    setResult(new Date(a));
   };
+
 
   return (
     <div
@@ -53,49 +44,29 @@ const App = () => {
     >
       <Row style={{ margin: "0 auto" }}>
         <Title>Zero Emissions Factory</Title>
-        <Text>
-          A scheduler to optimize production lines with local green energy
-          prodviders
-        </Text>
+        <Text>Energy</Text>
         {
           <Formik
             initialValues={{
-              startTime: new Date(),
-              endTime: new Date(),
-              productionTime: 0 //minutes
+              startTime: new Date(2019, 5, 10, 10, 0), endTime: new Date(2019, 5, 10, 15, 0), productionTime: 0 //minutes
             }}
             onSubmit={async (values: any, actions: any) => {
               actions.setSubmitting(true);
               if (values) {
                 const { startTime, endTime, productionTime } = values;
-                await makeRequest(startTime, endTime, productionTime);
+                makeRequest(startTime, endTime, productionTime);
                 actions.setSubmitting(false);
               }
-              // message.error("Missing form data front end");
-              // actions.setSubmitting(false);
             }}
             render={({ handleSubmit, isSubmitting, isValid }) => (
               <Form onSubmit={handleSubmit}>
                 <FormItem name="startTime" label="Start Time">
-                  <DatePicker
-                    showTime
-                    name="startTime"
-                    style={{ width: 200 }}
-                    format="YYYY-MM-DD HH:mm"
-                  />
+                  <DatePicker showTime name="startTime" style={{ width: 200 }} format="YYYY-MM-DD HH:mm" />
                 </FormItem>
                 <FormItem name="endTime" label="End Time">
-                  <DatePicker
-                    showTime
-                    name="endTime"
-                    style={{ width: 200 }}
-                    format="YYYY-MM-DD HH:mm"
-                  />
+                  <DatePicker showTime name="endTime" style={{ width: 200 }} format="YYYY-MM-DD HH:mm" />
                 </FormItem>
-                <FormItem
-                  name="productionTime"
-                  label="Approximate Production Time"
-                >
+                <FormItem name="productionTime" label="Approximate Production Time"                >
                   <Select name="productionTime" style={{ width: 200 }}>
                     {Select.renderOptions(
                       [15, 30, 45, 60].map(duration => ({
@@ -122,29 +93,8 @@ const App = () => {
               </Form>
             )}
           />
-
-          // <Plot
-          //   data={[
-          //     {
-          //       x: result.payload.map(label => label),
-          //       y: result.payload.map((_, value) => value),
-          //       type: "bar",
-          //       marker: { color: "green" }
-          //     },
-          //     { type: "bar", x: [1, 2, 3], y: [2, 5, 3] }
-          //   ]}
-          //   layout={{
-          //     width: 450,
-          //     height: 450,
-          //     title: "Percentage of green energy"
-          //   }}
-          // />
         }
-        <div>
-          {Object.keys(result).map(key => (
-            <div>{key}</div>
-          ))}
-        </div>
+        <div><h2>{String(result)}</h2></div>
       </Row>
     </div>
   );
