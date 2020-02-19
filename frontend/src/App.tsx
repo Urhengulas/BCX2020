@@ -8,60 +8,37 @@ import { Typography } from "antd";
 
 const { Title, Text } = Typography;
 
-interface DataPoint {
-  datelabel: Date | number | string;
-  value: number | string;
-}
+// interface DataPoint {
+//   datelabel: Date | number | string;
+//   value: number | string;
+// }
 
-type DataPoints = DataPoint[];
-
-interface ServiceInit {
-  status: "init";
-}
-interface ServiceLoading {
-  status: "loading";
-}
-interface ServiceLoaded<T> {
-  status: "loaded";
-  payload: T;
-}
-interface ServiceError {
-  status: "error";
-  error: Error | string;
-}
-
-type Service<T> =
-  | ServiceInit
-  | ServiceLoading
-  | ServiceLoaded<T>
-  | ServiceError;
+// type DataPoints = DataPoint[];
 
 const App = () => {
-  const [result, setResult] = useState<Service<DataPoints>>({
-    status: "loading"
-  });
+  const [result, setResult] = useState(new Date());
 
   const makeRequest = (
     startTime: Date,
     endTime: Date,
     productionTime: number
   ) => {
-    console.log(startTime, endTime, productionTime);
-    // const data = fetch("", {qs: { startTime, endTime, productionTime} })
-    //   .then(response => response.json())
-    //   .then(response =>
-    //     setResult({
-    //       status: "loaded",
-    //       payload: response
-    //     })
-    //   )
-    //   .catch(error =>
-    //     setResult({
-    //       status: "error",
-    //       error
-    //     })
-    //   );
-    return true;
+    const resquestObj = {
+      earliest_start_time: startTime,
+      deadline: endTime,
+      prod_time_in_min: productionTime
+    };
+    console.log(resquestObj);
+    const data = fetch("localhost:5000/schedule", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(resquestObj)
+    })
+      .then(response => response.json())
+      .then(response => setResult(response))
+      .catch(err => console.error(err));
   };
 
   return (
@@ -91,18 +68,8 @@ const App = () => {
               actions.setSubmitting(true);
               if (values) {
                 const { startTime, endTime, productionTime } = values;
-                const response = await makeRequest(
-                  startTime,
-                  endTime,
-                  productionTime
-                );
-                if (response) {
-                  message.success("response");
-                  actions.setSubmitting(false);
-                } else {
-                  message.error("Backend error");
-                  actions.setSubmitting(false);
-                }
+                await makeRequest(startTime, endTime, productionTime);
+                actions.setSubmitting(false);
               }
               // message.error("Missing form data front end");
               // actions.setSubmitting(false);
@@ -110,10 +77,20 @@ const App = () => {
             render={({ handleSubmit, isSubmitting, isValid }) => (
               <Form onSubmit={handleSubmit}>
                 <FormItem name="startTime" label="Start Time">
-                  <DatePicker name="startTime" style={{ width: 200 }} />
+                  <DatePicker
+                    showTime
+                    name="startTime"
+                    style={{ width: 200 }}
+                    format="YYYY-MM-DD HH:mm"
+                  />
                 </FormItem>
                 <FormItem name="endTime" label="End Time">
-                  <DatePicker name="endTime" style={{ width: 200 }} />
+                  <DatePicker
+                    showTime
+                    name="endTime"
+                    style={{ width: 200 }}
+                    format="YYYY-MM-DD HH:mm"
+                  />
                 </FormItem>
                 <FormItem
                   name="productionTime"
@@ -163,6 +140,11 @@ const App = () => {
           //   }}
           // />
         }
+        <div>
+          {Object.keys(result).map(key => (
+            <div>{key}</div>
+          ))}
+        </div>
       </Row>
     </div>
   );
