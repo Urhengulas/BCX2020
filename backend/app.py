@@ -6,12 +6,15 @@ import requests
 import time
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, redirect, request
+from flask_cors import CORS, cross_origin
 
 from scheduler import schedule_task
 
 # use loginpass to make OAuth connection simpler
 
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 app.secret_key = "!secret"
 oauth = OAuth(app)
 
@@ -32,21 +35,22 @@ homeConnect = oauth.create_client("minion-production")
 
 @app.route("/")
 def hello_world():
-    
+
     for i in range(-13, 13):
         i = 12-abs(i)
         time.sleep(0.025)
-        changeStrangeLight("0",hex(i*21).lstrip("0x"))
-        changeLight("2",hex(i*21).lstrip("0x"))
+        changeStrangeLight("0", hex(i*21).lstrip("0x"))
+        changeLight("2", hex(i*21).lstrip("0x"))
     # initIOPort("0")
     # initIOPort("2")
     # changeStrangeLight("0","FF")
     # changeLight("2","7F")
     return 'Hello, World!'
 
+
 @app.route("/login")
 def login():
-    redirect_uri ="http://localhost:5000/authorize"
+    redirect_uri = "http://localhost:5000/authorize"
     return homeConnect.authorize_redirect(redirect_uri)
 
 
@@ -68,6 +72,7 @@ def authorize():
 
 
 @app.route("/schedule", methods=["POST"])
+@cross_origin()
 def schedule():
     """
     Schedule a given task.
@@ -98,7 +103,9 @@ def schedule():
         deadline=deadline,
         prod_time=prod_time_in_min
     )
-    return str(res)
+    a = {"start_time": str(res)}
+    print("a=", a)
+    return a
 
 
 def makeCoffee():
@@ -130,16 +137,20 @@ def selectedProgram():
     print(selectedProgram.content)
     return
 
+
 def initIOPort(port):
-    r = requests.post('http://192.168.1.1/TMG.htm', data ="UDP_Packet=24.00.02.0F." + port + ".00.0C.11.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
+    r = requests.post('http://192.168.1.1/TMG.htm', data="UDP_Packet=24.00.02.0F." + port +
+                      ".00.0C.11.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
 
 
 def changeLight(port, hexvalue):
-    r = requests.post('http://192.168.1.1/TMG.htm', data ="UDP_Packet=24.00.02.0B." + port + "." + hexvalue + ".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
+    r = requests.post('http://192.168.1.1/TMG.htm', data="UDP_Packet=24.00.02.0B." + port + "." + hexvalue +
+                      ".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
 
 
 def changeStrangeLight(port, hexvalue):
-    r = requests.post('http://192.168.1.1/TMG.htm', data ="UDP_Packet=24.00.02.0B." + port + ".67.04.00.02.00.00."+hexvalue+".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
+    r = requests.post('http://192.168.1.1/TMG.htm', data="UDP_Packet=24.00.02.0B." + port +
+                      ".67.04.00.02.00.00."+hexvalue+".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
 
 
 def changeLight(hexvalue):
