@@ -6,12 +6,15 @@ import time
 import pandas as pd 
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, redirect, request
+from flask_cors import CORS, cross_origin
 
 from scheduler import schedule_task
 
 # use loginpass to make OAuth connection simpler
 
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 app.secret_key = "!secret"
 oauth = OAuth(app)
 
@@ -58,9 +61,10 @@ def startjob():
     runEnergyData(data,"2019-01-01 02:00:00",res, datetime.strptime("2019-01-03 10:00:00","%Y-%m-%d %H:%M:%S" ), 5)
     return 'Hello, World!'
 
+
 @app.route("/login")
 def login():
-    redirect_uri ="http://localhost:5000/authorize"
+    redirect_uri = "http://localhost:5000/authorize"
     return homeConnect.authorize_redirect(redirect_uri)
 
 
@@ -82,6 +86,7 @@ def authorize():
 
 
 @app.route("/schedule", methods=["POST"])
+@cross_origin()
 def schedule():
     """
     Schedule a given task.
@@ -112,8 +117,9 @@ def schedule():
         deadline=deadline,
         prod_time=prod_time_in_min
     )
-    #runEnergyData(data,earliest_start_time,res, deadline, 1)
-    return str(res)
+    a = {"start_time": str(res)}
+    print("a=", a)
+    return a
 
 
 def makeCoffee():
@@ -145,16 +151,20 @@ def selectedProgram():
     print(selectedProgram.content)
     return
 
+
 def initIOPort(port):
-    r = requests.post('http://192.168.1.1/TMG.htm', data ="UDP_Packet=24.00.02.0F." + port + ".00.0C.11.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
+    r = requests.post('http://192.168.1.1/TMG.htm', data="UDP_Packet=24.00.02.0F." + port +
+                      ".00.0C.11.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
 
 
 def changeLight(port, hexvalue):
-    r = requests.post('http://192.168.1.1/TMG.htm', data ="UDP_Packet=24.00.02.0B." + port + "." + hexvalue + ".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
+    r = requests.post('http://192.168.1.1/TMG.htm', data="UDP_Packet=24.00.02.0B." + port + "." + hexvalue +
+                      ".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
 
 
 def changeStrangeLight(port, hexvalue):
-    r = requests.post('http://192.168.1.1/TMG.htm', data ="UDP_Packet=24.00.02.0B." + port + ".67.04.00.02.00.00."+hexvalue+".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
+    r = requests.post('http://192.168.1.1/TMG.htm', data="UDP_Packet=24.00.02.0B." + port +
+                      ".67.04.00.02.00.00."+hexvalue+".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
 
 def runEnergyData(data, start_date, job_start, job_deadline, job_length):
     print(data["2019-01-01 02:00:00"])

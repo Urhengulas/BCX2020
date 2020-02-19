@@ -10,6 +10,7 @@ flask = "^1.1.1"
 pandas = "^1.0.1"
 requests = "^2.22.0"
 authlib = "^0.14.1"
+flask-cors = "^3.0.8"
 
 [tool.poetry.dev-dependencies]
 autopep8 = "^1.5"

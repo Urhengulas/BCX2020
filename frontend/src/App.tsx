@@ -1,26 +1,103 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import Plot from "react-plotly.js";
+import "./App.css";
+import { message, Form, Button, Row } from "antd";
+import { Formik } from "formik";
+import { FormItem, DatePicker, Select } from "formik-antd";
+import { Typography } from "antd";
+import axios from "axios";
 
-function App() {
+
+const { Title, Text } = Typography;
+
+const App = () => {
+  const [result, setResult] = useState(new Date());
+
+  const makeRequest = async (startTime: Date, endTime: Date, productionTime: number) => {
+    const startTimeStr = `${startTime.getFullYear()}-${startTime.getMonth() + 1}-${startTime.getDate()} ${startTime.getHours()}:${startTime.getMinutes()}:${startTime.getSeconds()}`;
+    const endTimeStr = `${endTime.getFullYear()}-${endTime.getMonth() + 1}-${endTime.getDate()} ${endTime.getHours()}:${endTime.getMinutes()}:${endTime.getSeconds()}`;
+    const inputData = {
+      earliest_start_time: startTimeStr,
+      deadline: endTimeStr,
+      prod_time_in_min: productionTime
+    };
+    console.log("inputData=", inputData);
+    const res = await axios.post(
+      "http://localhost:5000/schedule",
+      inputData
+    );
+    const a = res.data.start_time;
+    console.log("result=", a);
+    setResult(new Date(a));
+  };
+
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div
+      className="App"
+      style={{
+        textAlign: "center",
+        height: "100vh",
+        display: "flex",
+        alignItems: "center"
+      }}
+    >
+      <Row style={{ margin: "0 auto" }}>
+        <Title>Zero Emissions Factory</Title>
+        <Text>Energy</Text>
+        {
+          <Formik
+            initialValues={{
+              startTime: new Date(2019, 5, 10, 10, 0), endTime: new Date(2019, 5, 10, 15, 0), productionTime: 0 //minutes
+            }}
+            onSubmit={async (values: any, actions: any) => {
+              actions.setSubmitting(true);
+              if (values) {
+                const { startTime, endTime, productionTime } = values;
+                makeRequest(startTime, endTime, productionTime);
+                actions.setSubmitting(false);
+              }
+            }}
+            render={({ handleSubmit, isSubmitting, isValid }) => (
+              <Form onSubmit={handleSubmit}>
+                <FormItem name="startTime" label="Start Time">
+                  <DatePicker showTime name="startTime" style={{ width: 200 }} format="YYYY-MM-DD HH:mm" />
+                </FormItem>
+                <FormItem name="endTime" label="End Time">
+                  <DatePicker showTime name="endTime" style={{ width: 200 }} format="YYYY-MM-DD HH:mm" />
+                </FormItem>
+                <FormItem name="productionTime" label="Approximate Production Time"                >
+                  <Select name="productionTime" style={{ width: 200 }}>
+                    {Select.renderOptions(
+                      [15, 30, 45, 60].map(duration => ({
+                        value: duration,
+                        label: <span>{duration.toString() + " minutes"}</span>
+                      }))
+                    )}
+                  </Select>
+                </FormItem>
+                <Form.Item>
+                  <Button
+                    icon="check"
+                    type="primary"
+                    style={{ background: "#1DA57A", border: "#1DA57A" }}
+                    loading={isSubmitting}
+                    disabled={!isValid}
+                    onClick={() => {
+                      handleSubmit();
+                    }}
+                  >
+                    Optimize production
+                  </Button>
+                </Form.Item>
+              </Form>
+            )}
+          />
+        }
+        <div><h2>{String(result)}</h2></div>
+      </Row>
     </div>
   );
-}
+};
 
 export default App;
