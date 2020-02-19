@@ -55,7 +55,7 @@ def startjob():
     changeStrangeLight("0","0")
     changeLight("2","0")
     res = schedule_task(datetime.strptime("2019-01-01 02:00:00","%Y-%m-%d %H:%M:%S" ),datetime.strptime("2019-01-02 10:00:00","%Y-%m-%d %H:%M:%S" ),timedelta(hours=5))
-    runEnergyData(data,"2019-01-01 02:00:00",res, datetime.strptime("2019-01-03 10:00:00","%Y-%m-%d %H:%M:%S" ), 1)
+    runEnergyData(data,"2019-01-01 02:00:00",res, datetime.strptime("2019-01-03 10:00:00","%Y-%m-%d %H:%M:%S" ), 5)
     return 'Hello, World!'
 
 @app.route("/login")
@@ -161,7 +161,7 @@ def runEnergyData(data, start_date, job_start, job_deadline, job_length):
 
     start_date = datetime.strptime(start_date,"%Y-%m-%d %H:%M:%S" )
     #job_start = datetime.strptime(job_start,"%Y-%m-%d %H:%M:%S" )
-    end_date = start_date + timedelta(days=3)
+    #end_date = start_date + timedelta(days=3)
     delta = timedelta(hours=1)
     job_length = timedelta(hours= job_length)
     while start_date <= job_deadline:
