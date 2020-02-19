@@ -36,17 +36,18 @@ homeConnect = oauth.create_client("minion-production")
 
 @app.route("/")
 def hello_world():
+    initIOPort("0")
+    initIOPort("2")
     
     # for i in range(-13, 13):
     #     i = 12-abs(i)
     #     time.sleep(0.025)
     #     changeStrangeLight("0",hex(i*21).lstrip("0x"))
     #     changeLight("2",hex(i*21).lstrip("0x"))
-    # initIOPort("0")
-    # initIOPort("2")
-    # changeStrangeLight("0","FF")
-    # changeLight("2","7F")
-    runEnergyData(data,"2019-01-01 02:00:00")
+    
+    changeStrangeLight("0","0")
+    changeLight("2","0")
+    runEnergyData(data,"2019-01-01 02:00:00","2019-01-01 23:00:00", 1)
     return 'Hello, World!'
 
 @app.route("/login")
@@ -111,17 +112,25 @@ def changeLight(port, hexvalue):
 def changeStrangeLight(port, hexvalue):
     r = requests.post('http://192.168.1.1/TMG.htm', data ="UDP_Packet=24.00.02.0B." + port + ".67.04.00.02.00.00."+hexvalue+".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
 
-def runEnergyData(data, start_date):
+def runEnergyData(data, start_date, job_start, job_length):
     print(data["2019-01-01 02:00:00"])
 
-    start_date = datetime.strptime("2019-01-01 00:00:00","%Y-%m-%d %H:%M:%S" )
-    end_date = start_date + timedelta(days=1)
+    start_date = datetime.strptime(start_date,"%Y-%m-%d %H:%M:%S" )
+    job_start = datetime.strptime(job_start,"%Y-%m-%d %H:%M:%S" )
+    end_date = start_date + timedelta(days=3)
     delta = timedelta(hours=1)
+    job_length = timedelta(hours= job_length)
     while start_date <= end_date:
+        
         print(data[start_date.strftime("%Y-%m-%d %H:%M:%S")].values[0][0])
-        print(int(data[start_date.strftime("%Y-%m-%d %H:%M:%S")].values[0][0]*0.12))
-        changeStrangeLight("0",hex(int(data[start_date.strftime("%Y-%m-%d %H:%M:%S")].values[0][0]*0.12)).lstrip("0x"))
-        time.sleep(0.5)
+        changeLight("2", hex(int(data[start_date.strftime("%Y-%m-%d %H:%M:%S")].values[0][0]*2.5)).lstrip("0x"))
+        if(start_date == job_start):
+            print(start_date)
+            changeStrangeLight("0","FF")
+        if (start_date == job_start + job_length):
+            print(start_date)
+            changeStrangeLight("0","0")
+        time.sleep(0.2)
         start_date += delta
-
+    changeLight("2", "0")
 
