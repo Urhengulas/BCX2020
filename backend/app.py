@@ -1,9 +1,9 @@
 import json
 import logging
 from datetime import datetime, timedelta
-
 import requests
 import time
+import pandas as pd 
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, redirect, request
 
@@ -14,6 +14,13 @@ from scheduler import schedule_task
 app = Flask(__name__)
 app.secret_key = "!secret"
 oauth = OAuth(app)
+
+data: pd.Series = pd.read_csv(
+    "../data/renewData.csv",
+    sep=";",
+    parse_dates=["datelabel"],
+    index_col="datelabel"
+)
 
 oauth.register(
     name="minion-production",
@@ -32,16 +39,23 @@ homeConnect = oauth.create_client("minion-production")
 
 @app.route("/")
 def hello_world():
+    return 'Hello, World!'
+
+@app.route("/start")
+def startjob():
+    initIOPort("0")
+    initIOPort("2")
     
-    for i in range(-13, 13):
-        i = 12-abs(i)
-        time.sleep(0.025)
-        changeStrangeLight("0",hex(i*21).lstrip("0x"))
-        changeLight("2",hex(i*21).lstrip("0x"))
-    # initIOPort("0")
-    # initIOPort("2")
-    # changeStrangeLight("0","FF")
-    # changeLight("2","7F")
+    # for i in range(-13, 13):
+    #     i = 12-abs(i)
+    #     time.sleep(0.025)
+    #     changeStrangeLight("0",hex(i*21).lstrip("0x"))
+    #     changeLight("2",hex(i*21).lstrip("0x"))
+    
+    changeStrangeLight("0","0")
+    changeLight("2","0")
+    res = schedule_task(datetime.strptime("2019-01-01 02:00:00","%Y-%m-%d %H:%M:%S" ),datetime.strptime("2019-01-02 10:00:00","%Y-%m-%d %H:%M:%S" ),timedelta(hours=5))
+    runEnergyData(data,"2019-01-01 02:00:00",res, datetime.strptime("2019-01-03 10:00:00","%Y-%m-%d %H:%M:%S" ), 1)
     return 'Hello, World!'
 
 @app.route("/login")
@@ -62,7 +76,7 @@ def authorize():
         "https://api.home-connect.com/api/homeappliances/SIEMENS-TI9575X1DE-68A40E357F21/programs/available")
     print(status.content)
     selectedProgram()
-
+    
     # do something with the token and profile
     return redirect("/")
 
@@ -98,6 +112,7 @@ def schedule():
         deadline=deadline,
         prod_time=prod_time_in_min
     )
+    #runEnergyData(data,earliest_start_time,res, deadline, 1)
     return str(res)
 
 
@@ -141,9 +156,25 @@ def changeLight(port, hexvalue):
 def changeStrangeLight(port, hexvalue):
     r = requests.post('http://192.168.1.1/TMG.htm', data ="UDP_Packet=24.00.02.0B." + port + ".67.04.00.02.00.00."+hexvalue+".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
 
+def runEnergyData(data, start_date, job_start, job_deadline, job_length):
+    print(data["2019-01-01 02:00:00"])
 
-def changeLight(hexvalue):
-    requests.post(
-        "http://192.168.1.1/TMG.htm",
-        data=f"UDP_Packet=24.00.02.0B.0.{hexvalue}.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20"
-    )
+    start_date = datetime.strptime(start_date,"%Y-%m-%d %H:%M:%S" )
+    #job_start = datetime.strptime(job_start,"%Y-%m-%d %H:%M:%S" )
+    end_date = start_date + timedelta(days=3)
+    delta = timedelta(hours=1)
+    job_length = timedelta(hours= job_length)
+    while start_date <= job_deadline:
+        
+        print(data[start_date.strftime("%Y-%m-%d %H:%M:%S")].values[0][0])
+        changeLight("2", hex(int(data[start_date.strftime("%Y-%m-%d %H:%M:%S")].values[0][0]*2.5)).lstrip("0x"))
+        if(start_date == job_start):
+            print(start_date)
+            changeStrangeLight("0","FF")
+        if (start_date == job_start + job_length):
+            print(start_date)
+            changeStrangeLight("0","0")
+        time.sleep(0.3)
+        start_date += delta
+    changeLight("2", "0")
+
