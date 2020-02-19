@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import Plot from "react-plotly.js";
 import "./App.css";
-import { message, Form, Button, Row } from "antd";
+import { Form, Button, Row, Card, Icon } from "antd";
 import { Formik } from "formik";
 import { FormItem, DatePicker, Select } from "formik-antd";
 import { Typography } from "antd";
@@ -12,6 +11,7 @@ const { Title, Text } = Typography;
 
 const App = () => {
   const [result, setResult] = useState(new Date());
+  let [flag, setFlag] = useState(false);
 
   const makeRequest = async (startTime: Date, endTime: Date, productionTime: number) => {
     const startTimeStr = `${startTime.getFullYear()}-${startTime.getMonth() + 1}-${startTime.getDate()} ${startTime.getHours()}:${startTime.getMinutes()}:${startTime.getSeconds()}`;
@@ -29,6 +29,7 @@ const App = () => {
     const a = res.data.start_time;
     console.log("result=", a);
     setResult(new Date(a));
+    setFlag(true);
   };
 
 
@@ -43,8 +44,9 @@ const App = () => {
       }}
     >
       <Row style={{ margin: "0 auto" }}>
+        <Icon type="dot-chart" style={{ fontSize: 80, color: "#1DA57A" }} />
         <Title>Zero Emissions Factory</Title>
-        <Text>Energy</Text>
+        <Text>Input your conditions</Text>
         {
           <Formik
             initialValues={{
@@ -94,7 +96,16 @@ const App = () => {
             )}
           />
         }
-        <div><h2>{String(result)}</h2></div>
+        {flag === true ? (
+          <Card
+            title="Found optimal solutions"
+            headStyle={{ backgroundColor: "#1DA57A" }}
+            bodyStyle={{ backgroundColor: "#6af2c2" }}
+          >
+            {String(result)}
+          </Card>
+        ) : <div></div>
+        }
       </Row>
     </div>
   );
