@@ -111,7 +111,7 @@ def schedule():
         prod_time_in_min = timedelta(minutes=int(args["prod_time_in_min"]))
     except:
         return "Wrong arguments! Did you supply {earliest_start_time: string, deadline: string, prod_time_in_min: int } ?"
-
+    
     res = schedule_task(
         earliest_start_time=earliest_start_time,
         deadline=deadline,
@@ -119,6 +119,7 @@ def schedule():
     )
     a = {"start_time": str(res)}
     print("a=", a)
+    runEnergyData(data, earliest_start_time, res ,deadline, 5)
     return a
 
 
@@ -169,10 +170,10 @@ def changeStrangeLight(port, hexvalue):
 def runEnergyData(data, start_date, job_start, job_deadline, job_length):
     print(data["2019-01-01 02:00:00"])
 
-    start_date = datetime.strptime(start_date,"%Y-%m-%d %H:%M:%S" )
+    #start_date = datetime.strptime(start_date,"%Y-%m-%d %H:%M:%S" )
     #job_start = datetime.strptime(job_start,"%Y-%m-%d %H:%M:%S" )
     #end_date = start_date + timedelta(days=3)
-    delta = timedelta(hours=1)
+    delta = timedelta(minutes=15)
     job_length = timedelta(hours= job_length)
     while start_date <= job_deadline:
         
