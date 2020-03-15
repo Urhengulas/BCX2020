@@ -16,6 +16,8 @@
 ## about
 The **Zero Emission Factory** was the winning project of the **zero emission track** at the [Bosch Connected Experience Hackathon 2020](https://bosch-connected-world.com/hackathon/).
 
+[![tweet](tweet.jpg)](https://twitter.com/Bosch_IO/status/1230161284584411139)
+
 ### problem
 Factories all over the world produce goods and use A LOT of energy every day and thereby are responsible for a big share of the energy consumption and CO$_2$-production of a country. 
 
