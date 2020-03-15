@@ -6,12 +6,15 @@ import requests
 import time
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, redirect, request
+from flask_cors import CORS, cross_origin
 
 from scheduler import schedule_task
 
 # use loginpass to make OAuth connection simpler
 
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 app.secret_key = "!secret"
 oauth = OAuth(app)
 
@@ -32,21 +35,23 @@ homeConnect = oauth.create_client("minion-production")
 
 @app.route("/")
 def hello_world():
+    # for i in range(-13, 13):
+    #     i = 12-abs(i)
+    #     time.sleep(0.025)
+    #     changeStrangeLight("0",hex(i*21).lstrip("0x"))
+    #     changeLight("2",hex(i*21).lstrip("0x"))
     
-    for i in range(-13, 13):
-        i = 12-abs(i)
-        time.sleep(0.025)
-        changeStrangeLight("0",hex(i*21).lstrip("0x"))
-        changeLight("2",hex(i*21).lstrip("0x"))
-    # initIOPort("0")
-    # initIOPort("2")
-    # changeStrangeLight("0","FF")
-    # changeLight("2","7F")
+    changeStrangeLight("0","0")
+    changeLight("2","0")
+    res = schedule_task(datetime.strptime("2019-01-01 02:00:00","%Y-%m-%d %H:%M:%S" ),datetime.strptime("2019-01-02 10:00:00","%Y-%m-%d %H:%M:%S" ),timedelta(hours=5))
+    runEnergyData(data,"2019-01-01 02:00:00",res, datetime.strptime("2019-01-03 10:00:00","%Y-%m-%d %H:%M:%S" ), 5)
+
     return 'Hello, World!'
+
 
 @app.route("/login")
 def login():
-    redirect_uri ="http://localhost:5000/authorize"
+    redirect_uri = "http://localhost:5000/authorize"
     return homeConnect.authorize_redirect(redirect_uri)
 
 
@@ -68,6 +73,7 @@ def authorize():
 
 
 @app.route("/schedule", methods=["POST"])
+@cross_origin()
 def schedule():
     """
     Schedule a given task.
@@ -92,13 +98,16 @@ def schedule():
         prod_time_in_min = timedelta(minutes=int(args["prod_time_in_min"]))
     except:
         return "Wrong arguments! Did you supply {earliest_start_time: string, deadline: string, prod_time_in_min: int } ?"
-
+    
     res = schedule_task(
         earliest_start_time=earliest_start_time,
         deadline=deadline,
         prod_time=prod_time_in_min
     )
-    return str(res)
+    a = {"start_time": str(res)}
+    print("a=", a)
+    runEnergyData(data, earliest_start_time, res ,deadline, 5)
+    return a
 
 
 def makeCoffee():
@@ -130,17 +139,42 @@ def selectedProgram():
     print(selectedProgram.content)
     return
 
+
 def initIOPort(port):
-    r = requests.post('http://192.168.1.1/TMG.htm', data ="UDP_Packet=24.00.02.0F." + port + ".00.0C.11.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
+    r = requests.post('http://192.168.1.1/TMG.htm', data="UDP_Packet=24.00.02.0F." + port +
+                      ".00.0C.11.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
 
 
 def changeLight(port, hexvalue):
-    r = requests.post('http://192.168.1.1/TMG.htm', data ="UDP_Packet=24.00.02.0B." + port + "." + hexvalue + ".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
+    r = requests.post('http://192.168.1.1/TMG.htm', data="UDP_Packet=24.00.02.0B." + port + "." + hexvalue +
+                      ".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
 
 
 def changeStrangeLight(port, hexvalue):
-    r = requests.post('http://192.168.1.1/TMG.htm', data ="UDP_Packet=24.00.02.0B." + port + ".67.04.00.02.00.00."+hexvalue+".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
+    r = requests.post('http://192.168.1.1/TMG.htm', data="UDP_Packet=24.00.02.0B." + port +
+                      ".67.04.00.02.00.00."+hexvalue+".00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.00.20.20")
 
+def runEnergyData(data, start_date, job_start, job_deadline, job_length):
+    print(data["2019-01-01 02:00:00"])
+
+    #start_date = datetime.strptime(start_date,"%Y-%m-%d %H:%M:%S" )
+    #job_start = datetime.strptime(job_start,"%Y-%m-%d %H:%M:%S" )
+    #end_date = start_date + timedelta(days=3)
+    delta = timedelta(minutes=15)
+    job_length = timedelta(hours= job_length)
+    while start_date <= job_deadline:
+        
+        print(data[start_date.strftime("%Y-%m-%d %H:%M:%S")].values[0][0])
+        changeLight("2", hex(int(data[start_date.strftime("%Y-%m-%d %H:%M:%S")].values[0][0]*2.5)).lstrip("0x"))
+        if(start_date == job_start):
+            print(start_date)
+            changeStrangeLight("0","FF")
+        if (start_date == job_start + job_length):
+            print(start_date)
+            changeStrangeLight("0","0")
+        time.sleep(0.3)
+        start_date += delta
+    changeLight("2", "0")
 
 def changeLight(hexvalue):
     requests.post(

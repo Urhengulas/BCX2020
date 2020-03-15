@@ -1,67 +1,38 @@
 import React, { useState } from "react";
-import Plot from "react-plotly.js";
 import "./App.css";
-import { message, Form, Button, Row } from "antd";
+import { Form, Button, Row, Card, Icon } from "antd";
 import { Formik } from "formik";
 import { FormItem, DatePicker, Select } from "formik-antd";
 import { Typography } from "antd";
+import axios from "axios";
 
 const { Title, Text } = Typography;
 
-interface DataPoint {
-  datelabel: Date | number | string;
-  value: number | string;
-}
-
-type DataPoints = DataPoint[];
-
-interface ServiceInit {
-  status: "init";
-}
-interface ServiceLoading {
-  status: "loading";
-}
-interface ServiceLoaded<T> {
-  status: "loaded";
-  payload: T;
-}
-interface ServiceError {
-  status: "error";
-  error: Error | string;
-}
-
-type Service<T> =
-  | ServiceInit
-  | ServiceLoading
-  | ServiceLoaded<T>
-  | ServiceError;
-
 const App = () => {
-  const [result, setResult] = useState<Service<DataPoints>>({
-    status: "loading"
-  });
+  const [result, setResult] = useState(new Date());
+  let [flag, setFlag] = useState(false);
 
-  const makeRequest = (
+  const makeRequest = async (
     startTime: Date,
     endTime: Date,
     productionTime: number
   ) => {
-    console.log(startTime, endTime, productionTime);
-    // const data = fetch("", {qs: { startTime, endTime, productionTime} })
-    //   .then(response => response.json())
-    //   .then(response =>
-    //     setResult({
-    //       status: "loaded",
-    //       payload: response
-    //     })
-    //   )
-    //   .catch(error =>
-    //     setResult({
-    //       status: "error",
-    //       error
-    //     })
-    //   );
-    return true;
+    console.log(startTime);
+    const startTimeStr = `${startTime.getFullYear()}-${startTime.getMonth() +
+      1}-${startTime.getDate()} ${startTime.getHours()}:${startTime.getMinutes()}:${startTime.getSeconds()}`;
+    const endTimeStr = `${endTime.getFullYear()}-${endTime.getMonth() +
+      1}-${endTime.getDate()} ${endTime.getHours()}:${endTime.getMinutes()}:${endTime.getSeconds()}`;
+    const inputData = {
+      earliest_start_time: startTimeStr,
+      deadline: endTimeStr,
+      prod_time_in_min: productionTime
+    };
+    console.log("inputData=", inputData);
+    const res = await axios.post("http://localhost:5000/schedule", inputData);
+    const a = res.data.start_time;
+    console.log("result=", a);
+    setResult(new Date(a));
+    setFlag(true);
   };
 
   return (
@@ -75,45 +46,49 @@ const App = () => {
       }}
     >
       <Row style={{ margin: "0 auto" }}>
+        <Icon type="dot-chart" style={{ fontSize: 80, color: "#1DA57A" }} />
         <Title>Zero Emissions Factory</Title>
-        <Text>
-          A scheduler to optimize production lines with local green energy
-          prodviders
-        </Text>
+        <Text>Input your conditions</Text>
         {
           <Formik
             initialValues={{
-              startTime: new Date(),
-              endTime: new Date(),
+              startTime: new Date(2019, 5, 10, 10, 0),
+              endTime: new Date(2019, 5, 10, 15, 0),
               productionTime: 0 //minutes
             }}
             onSubmit={async (values: any, actions: any) => {
               actions.setSubmitting(true);
               if (values) {
                 const { startTime, endTime, productionTime } = values;
-                const response = await makeRequest(
-                  startTime,
-                  endTime,
+                // console.log(typeof startTime, " : ", typeof endTime);
+                // return false;
+                makeRequest(
+                  typeof startTime === "string"
+                    ? new Date(startTime)
+                    : startTime,
+                  typeof endTime === "string" ? new Date(endTime) : endTime,
                   productionTime
                 );
-                if (response) {
-                  message.success("response");
-                  actions.setSubmitting(false);
-                } else {
-                  message.error("Backend error");
-                  actions.setSubmitting(false);
-                }
+                actions.setSubmitting(false);
               }
-              // message.error("Missing form data front end");
-              // actions.setSubmitting(false);
             }}
             render={({ handleSubmit, isSubmitting, isValid }) => (
               <Form onSubmit={handleSubmit}>
                 <FormItem name="startTime" label="Start Time">
-                  <DatePicker name="startTime" style={{ width: 200 }} />
+                  <DatePicker
+                    showTime
+                    name="startTime"
+                    style={{ width: 200 }}
+                    format="YYYY-MM-DD HH:mm"
+                  />
                 </FormItem>
                 <FormItem name="endTime" label="End Time">
-                  <DatePicker name="endTime" style={{ width: 200 }} />
+                  <DatePicker
+                    showTime
+                    name="endTime"
+                    style={{ width: 200 }}
+                    format="YYYY-MM-DD HH:mm"
+                  />
                 </FormItem>
                 <FormItem
                   name="productionTime"
@@ -145,24 +120,18 @@ const App = () => {
               </Form>
             )}
           />
-
-          // <Plot
-          //   data={[
-          //     {
-          //       x: result.payload.map(label => label),
-          //       y: result.payload.map((_, value) => value),
-          //       type: "bar",
-          //       marker: { color: "green" }
-          //     },
-          //     { type: "bar", x: [1, 2, 3], y: [2, 5, 3] }
-          //   ]}
-          //   layout={{
-          //     width: 450,
-          //     height: 450,
-          //     title: "Percentage of green energy"
-          //   }}
-          // />
         }
+        {flag === true ? (
+          <Card
+            title="Found optimal solutions"
+            headStyle={{ backgroundColor: "#1DA57A" }}
+            bodyStyle={{ backgroundColor: "#6af2c2" }}
+          >
+            {String(result)}
+          </Card>
+        ) : (
+          <div></div>
+        )}
       </Row>
     </div>
   );
